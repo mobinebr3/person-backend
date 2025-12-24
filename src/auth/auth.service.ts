@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { AppException } from '../common/exceptions/app.exceptions.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -13,12 +14,12 @@ export class AuthService {
   async register(email: string, pass: string, name: string) {
     // بررسی ورودی‌ها
     if (!email || !pass || !name) {
-      throw new BadRequestException('ایمیل، رمز عبور و نام الزامی هستند');
+      throw new AppException(1002, 'ایمیل، رمز عبور و نام الزامی هستند');
     }
 
     // ۱. بررسی تکراری نبودن ایمیل
     const userExists = await this.prisma.user.findUnique({ where: { email } });
-    if (userExists) throw new BadRequestException('این ایمیل قبلاً ثبت شده است');
+    if (userExists) throw new AppException(1001, 'این ایمیل قبلاً ثبت شده است');
 
     // ۲. هش کردن پسورد
     const salt = await bcrypt.genSalt();
