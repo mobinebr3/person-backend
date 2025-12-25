@@ -9,6 +9,5 @@
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./node_modules/@prisma/client"]
   }
 }

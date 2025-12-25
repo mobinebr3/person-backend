@@ -1,11 +1,11 @@
 // auth.controller.ts
-import { Body, Controller, Post, Get, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { MessageCode } from 'src/common/message-code.decorator';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { Public } from './public.decorator';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Public } from './public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -24,9 +24,10 @@ export class AuthController {
   login(@Body() body: LoginDto) {
     return this.authService.login(body.email, body.password);
   }
+
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Req() req) {
-    return this.authService.getProfile(req.user.sub)
+  getProfile(@Request() req) {
+    return this.authService.getProfile(req.user)
   }
 }

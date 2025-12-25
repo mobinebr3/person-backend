@@ -1,8 +1,8 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
-  @IsEmail()
-  @IsNotEmpty()
+  @IsEmail({}, {message: "ایمیل وارد شده معتبر نیست"})
+  @IsNotEmpty({message: "ایمیل نمیتواند خالی باشد"})
   email: string;
 
   @IsString()

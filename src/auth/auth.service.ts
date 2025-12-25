@@ -53,11 +53,9 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
-  async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      // include: {},
-    });
+
+  async getProfile(user) {
+  
     if (!user) throw new Error('کاربر');
     
     return {
