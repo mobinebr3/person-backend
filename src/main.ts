@@ -18,7 +18,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()))
 
  const config = new DocumentBuilder()
-    .setTitle('perseo docs')
+    .setTitle('perseon docs')
     .setDescription('')
     .setVersion('1.0')
     .addTag('Perseo')

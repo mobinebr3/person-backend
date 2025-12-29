@@ -1,5 +1,6 @@
 // auth.controller.ts
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { MessageCode } from 'src/common/message-code.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -17,6 +18,17 @@ export class AuthController {
   register(@Body() body: RegisterDto) {
     return this.authService.register(body.email, body.password, body.name);
   }
+
+  @UseGuards(AuthGuard('jwt-refresh'))
+  @Post('refresh')
+  @Public()
+  @MessageCode(1005)
+  async refreshToken(@Request() req) {
+  const userId = req.user.userId; 
+  const refreshToken = req.user.refreshToken;
+  
+  return this.authService.refreshTokens(userId, refreshToken);
+  } 
 
   @Post('login')
   @Public()

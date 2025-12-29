@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AppException } from '../common/exceptions/app.exceptions.js';
@@ -9,23 +10,20 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private configService: ConfigService
   ) {}
 
   async register(email: string, pass: string, name: string) {
-    // بررسی ورودی‌ها
     if (!email || !pass || !name) {
       throw new AppException(1002, 'ایمیل، رمز عبور و نام الزامی هستند');
     }
 
-    // ۱. بررسی تکراری نبودن ایمیل
     const userExists = await this.prisma.user.findUnique({ where: { email } });
     if (userExists) throw new AppException(1001, 'این ایمیل قبلاً ثبت شده است');
 
-    // ۲. هش کردن پسورد
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(pass, salt);
 
-    // ۳. ذخیره در دیتابیس
     const user = await this.prisma.user.create({
       data: {
         email,
@@ -49,9 +47,77 @@ export class AuthService {
     if (!isMatch) throw new BadRequestException('ایمیل یا رمز عبور اشتباه است');
 
     const payload = { sub: user.id, email: user.email };
+
+  const accessToken = await this.jwtService.signAsync(payload);
+
+  const refreshToken = await this.jwtService.signAsync(payload, {
+    secret: this.configService.get('JWT_REFRESH_SECRET'),
+    expiresIn: '7d',
+  });
+
+  await this.updateRefreshToken(user.id, refreshToken);
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      access_token: accessToken,
+      refresh_token: refreshToken
     };
+  }
+
+  async refreshTokens(userId: string, refreshToken: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.refreshTokenHash) {
+      throw new ForbiddenException('دسترسی غیرمجاز - لطفاً دوباره وارد شوید');
+    }
+
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.refreshTokenHash,
+    );
+
+    if (!refreshTokenMatches) {
+      throw new ForbiddenException('توکن نامعتبر است');
+    }
+
+    const tokens = await this.getTokens(user.id, user.email);
+
+    await this.updateRefreshToken(user.id, tokens.refresh_token);
+
+    return tokens;
+  }
+
+  async getTokens(userId: string, email: string) {
+    const [at, rt] = await Promise.all([
+      this.jwtService.signAsync(
+        { sub: userId, email },
+        {
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        },
+      ),
+      this.jwtService.signAsync(
+        { sub: userId, email },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
+    ]);
+
+    return {
+      access_token: at,
+      refresh_token: rt,
+    };
+  }
+  
+
+  async updateRefreshToken(userId: string, refreshToken: string) {
+  const hashedToken = await bcrypt.hash(refreshToken, 10);
+  await this.prisma.user.update({
+    where: { id: userId },
+    data: { refreshTokenHash: hashedToken }, 
+  });
   }
 
   async getProfile(user) {
