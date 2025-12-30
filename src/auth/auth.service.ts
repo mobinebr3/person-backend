@@ -41,10 +41,10 @@ export class AuthService {
     }
 
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new BadRequestException('ایمیل یا رمز عبور اشتباه است');
+    if (!user) throw new AppException(1004,'ایمیل یا رمز عبور اشتباه است');
 
     const isMatch = await bcrypt.compare(pass, user.passwordHash);
-    if (!isMatch) throw new BadRequestException('ایمیل یا رمز عبور اشتباه است');
+    if (!isMatch) throw new AppException(1004,'ایمیل یا رمز عبور اشتباه است');
 
     const payload = { sub: user.id, email: user.email };
 

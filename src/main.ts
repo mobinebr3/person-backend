@@ -9,6 +9,13 @@ import { TransformInterceptor } from './common/transform.interseptor.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    origin: "http://localhost:3001",
+    credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  })
+
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -21,7 +28,16 @@ async function bootstrap() {
     .setTitle('perseon docs')
     .setDescription('')
     .setVersion('1.0')
-    .addTag('Perseo')
+    .addTag('Perseon').addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'Bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
