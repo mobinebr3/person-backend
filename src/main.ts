@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import 'dotenv/config';
 import { AppModule } from './app.module.js';
 import { TransformInterceptor } from './common/transform.interseptor.js';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,8 +23,14 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
     transform: true
   }));
+
+  // global response interceptor
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()))
 
+  // handle error messages
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // swagger config
  const config = new DocumentBuilder()
     .setTitle('perseon docs')
     .setDescription('')

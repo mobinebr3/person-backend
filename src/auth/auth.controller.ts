@@ -1,7 +1,7 @@
 // auth.controller.ts
 import { Body, Controller, Get, Post, Request, Response, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { MessageCode } from 'src/common/message-code.decorator';
+import { ResponseMessage } from 'src/common/exceptions/message.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -11,10 +11,9 @@ import { Public } from './public.decorator';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
-
   @Post('register')
   @Public()
-  @MessageCode(1000)
+  @ResponseMessage("شما با موفقیت ثبت نام کردید .")
   register(@Body() body: RegisterDto) {
     return this.authService.register(body.email, body.password, body.name);
   }
@@ -22,7 +21,6 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   @Public()
-  @MessageCode(1005)
   async refreshToken(@Request() req) {
   const userId = req.user.userId; 
   const refreshToken = req.user.refreshToken;
@@ -32,7 +30,6 @@ export class AuthController {
 
   @Post('login')
   @Public()
-  @MessageCode(1003)
   async login(@Body() body: LoginDto, @Response({passthrough: true}) response: any) {
     const tokens = await this.authService.login(body.email, body.password);
 

@@ -1,8 +1,7 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { AppException } from '../common/exceptions/app.exceptions.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -10,16 +9,17 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-    private configService: ConfigService
+    private configService: ConfigService,
   ) {}
+
 
   async register(email: string, pass: string, name: string) {
     if (!email || !pass || !name) {
-      throw new AppException(1002, 'ایمیل، رمز عبور و نام الزامی هستند');
+      throw new BadRequestException('ایمیل، رمز عبور و نام الزامی هستند');
     }
 
     const userExists = await this.prisma.user.findUnique({ where: { email } });
-    if (userExists) throw new AppException(1001, 'این ایمیل قبلاً ثبت شده است');
+    if (userExists) throw new ConflictException('این ایمیل قبلاً ثبت شده است');
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(pass, salt);
@@ -31,8 +31,8 @@ export class AuthService {
         name,
       },
     });
-
-    return { message: 'ثبت‌نام با موفقیت انجام شد', userId: user.id };
+    
+    return user.name;
   }
 
   async login(email: string, pass: string) {
@@ -41,10 +41,10 @@ export class AuthService {
     }
 
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new AppException(1004,'ایمیل یا رمز عبور اشتباه است');
+    if (!user) throw new ConflictException('ایمیل یا رمز عبور اشتباه است');
 
     const isMatch = await bcrypt.compare(pass, user.passwordHash);
-    if (!isMatch) throw new AppException(1004,'ایمیل یا رمز عبور اشتباه است');
+    if (!isMatch) throw new ConflictException('ایمیل یا رمز عبور اشتباه است');
 
     const payload = { sub: user.id, email: user.email };
 
