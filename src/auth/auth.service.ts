@@ -111,7 +111,6 @@ export class AuthService {
     };
   }
   
-
   async updateRefreshToken(userId: string, refreshToken: string) {
   const hashedToken = await bcrypt.hash(refreshToken, 10);
   await this.prisma.user.update({
